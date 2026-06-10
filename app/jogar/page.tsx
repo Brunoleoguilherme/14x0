@@ -5,7 +5,7 @@ import CampoTatico from "@/components/CampoTatico";
 import ListaJogadores from "@/components/ListaJogadores";
 import ResultadoSimulacao from "@/components/ResultadoSimulacao";
 import { Jogador, posicaoBase, posicoes } from "@/lib/data";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type ApiCampanha = {
   campanha_id: number;
@@ -41,6 +41,8 @@ export default function JogarPage() {
   const [escalacao, setEscalacao] =
     useState<Record<string, Jogador | null>>(initial);
 
+    const rolagemId = useRef(0);
+
   const [posicaoSelecionada, setPosicaoSelecionada] = useState<string | null>(
     "GOL"
   );
@@ -50,6 +52,7 @@ export default function JogarPage() {
   const [rolando, setRolando] = useState(false);
   const [podeEscolher, setPodeEscolher] = useState(false);
   const [historico, setHistorico] = useState<ApiCampanha[]>([]);
+  const [campanhasUsadas, setCampanhasUsadas] = useState<number[]>([]);
 
   const preenchidos = Object.values(escalacao).filter(Boolean).length;
   const completo = preenchidos === 11;
@@ -80,40 +83,87 @@ export default function JogarPage() {
   }
 
   async function buscarJogadores(campanhaId: number) {
-    const res = await fetch(`/api/campanha/${campanhaId}`);
+    const res = await fetch(`/api/campanha/${campanhaId}`, {
+      cache: "no-store",
+    });
+
     const data: ApiJogador[] = await res.json();
     setJogadoresDoElenco(data.map(converterJogador));
   }
 
-  async function rolarCampanha() {
-    if (rolando || completo || podeEscolher) return;
+  async function buscarCampanhaAleatoria(usados: number[]) {
+    const params = usados.length > 0 ? `?usados=${usados.join(",")}` : "";
+    const res = await fetch(`/api/roleta${params}`, { cache: "no-store" });
 
-    setRolando(true);
-    setPodeEscolher(false);
-    setJogadoresDoElenco([]);
+    if (!res.ok) {
+      throw new Error("Erro ao sortear campanha");
+    }
 
-    let contador = 0;
-    const total = 18;
+    return (await res.json()) as ApiCampanha;
+  }
 
-    const intervalo = window.setInterval(async () => {
-      contador++;
+  function esperar(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-      const res = await fetch("/api/roleta", { cache: "no-store" });
-      const campanha: ApiCampanha = await res.json();
+async function rolarCampanha() {
+  if (rolando || completo || podeEscolher) return;
+
+  const idAtual = rolagemId.current + 1;
+  rolagemId.current = idAtual;
+
+  setRolando(true);
+  setPodeEscolher(false);
+  setJogadoresDoElenco([]);
+
+  const usadosAgora = [...campanhasUsadas];
+
+  try {
+    let final: ApiCampanha | null = null;
+
+    for (let i = 0; i < 14; i++) {
+      if (rolagemId.current !== idAtual) return;
+
+      const campanha = await buscarCampanhaAleatoria(usadosAgora);
+
+      if (rolagemId.current !== idAtual) return;
 
       setCampanhaAtual(campanha);
+      final = campanha;
 
-      if (contador >= total) {
-        window.clearInterval(intervalo);
+      await esperar(120);
+    }
 
-        setHistorico((prev) => [campanha, ...prev].slice(0, 5));
-        await buscarJogadores(campanha.campanha_id);
+    if (!final || rolagemId.current !== idAtual) return;
 
-        setRolando(false);
-        setPodeEscolher(true);
-      }
-    }, 90);
+    const jogadoresRes = await fetch(`/api/campanha/${final.campanha_id}`, {
+      cache: "no-store",
+    });
+
+    const jogadoresData: ApiJogador[] = await jogadoresRes.json();
+
+    if (rolagemId.current !== idAtual) return;
+
+    setCampanhaAtual(final);
+    setJogadoresDoElenco(jogadoresData.map(converterJogador));
+
+    setHistorico((prev) => [final!, ...prev].slice(0, 8));
+
+    setCampanhasUsadas((prev) =>
+      prev.includes(final!.campanha_id)
+        ? prev
+        : [...prev, final!.campanha_id]
+    );
+
+    setPodeEscolher(true);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    if (rolagemId.current === idAtual) {
+      setRolando(false);
+    }
   }
+}
 
   function encontrarSlotLivre(jogador: Jogador) {
     if (
@@ -157,6 +207,7 @@ export default function JogarPage() {
     setJogadoresDoElenco([]);
     setPodeEscolher(false);
     setHistorico([]);
+    setCampanhasUsadas([]);
   }
 
   return (
@@ -176,7 +227,8 @@ export default function JogarPage() {
               </h1>
 
               <p className="font-bold text-stone-600">
-                Role um elenco histórico, escolha 1 jogador e complete os 11 titulares.
+                Role um elenco histórico, escolha 1 jogador e complete os 11
+                titulares.
               </p>
             </div>
 
@@ -270,33 +322,33 @@ export default function JogarPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
-  {campanhaAtual && podeEscolher ? (
-    <ListaJogadores
-      jogadores={jogadoresDoElenco}
-      escalacao={escalacao}
-      onEscolher={escolher}
-    />
-  ) : (
-    <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white p-6 text-center card-shadow">
-      <div>
-        <div className="mb-3 text-5xl">🎲</div>
-        <h2 className="text-2xl font-black text-vermelho">
-          {rolando ? "Roletando..." : "Role um elenco"}
-        </h2>
-        <p className="mt-2 max-w-sm font-bold text-stone-600">
-          O sistema vai sortear uma campanha histórica da Copa do Brasil.
-          Depois você escolhe 1 jogador daquele elenco.
-        </p>
-      </div>
-    </div>
-  )}
+          {campanhaAtual && podeEscolher ? (
+            <ListaJogadores
+              jogadores={jogadoresDoElenco}
+              escalacao={escalacao}
+              onEscolher={escolher}
+            />
+          ) : (
+            <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white p-6 text-center card-shadow">
+              <div>
+                <div className="mb-3 text-5xl">🎲</div>
+                <h2 className="text-2xl font-black text-vermelho">
+                  {rolando ? "Roletando..." : "Role um elenco"}
+                </h2>
+                <p className="mt-2 max-w-sm font-bold text-stone-600">
+                  O sistema vai sortear uma campanha histórica da Copa do
+                  Brasil. Depois você escolhe 1 jogador daquele elenco.
+                </p>
+              </div>
+            </div>
+          )}
 
-  <CampoTatico
-    escalacao={escalacao}
-    posicaoSelecionada={posicaoSelecionada}
-    onSelecionarPosicao={setPosicaoSelecionada}
-  />
-</div>
+          <CampoTatico
+            escalacao={escalacao}
+            posicaoSelecionada={posicaoSelecionada}
+            onSelecionarPosicao={setPosicaoSelecionada}
+          />
+        </div>
 
         {completo ? (
           <ResultadoSimulacao escalacao={escalacao} />

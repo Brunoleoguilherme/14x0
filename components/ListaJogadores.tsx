@@ -28,11 +28,7 @@ export default function ListaJogadores({ jogadores, escalacao, onEscolher }: Pro
     <div className="rounded-[28px] bg-white p-5 card-shadow">
       <h2 className="text-2xl font-black text-vermelho">Jogadores do elenco</h2>
 
-      <p className="mb-4 text-sm font-semibold text-stone-600">
-        A lista aparece por posição. Jogadores sem posição livre ficam bloqueados.
-      </p>
-
-      <div className="grid max-h-[540px] gap-3 overflow-y-auto pr-2">
+            <div className="grid max-h-[540px] gap-3 overflow-y-auto pr-2">
         {ordenados.map((jogador) => {
           const disponivel = encaixa(jogador);
 

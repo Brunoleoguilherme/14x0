@@ -16,6 +16,7 @@ export async function GET(
     .from("jogadores_14x0")
     .select("*")
     .eq("campanha_id", Number(id))
+    .order("posicao", { ascending: true })
     .order("overall", { ascending: false });
 
   if (error) {

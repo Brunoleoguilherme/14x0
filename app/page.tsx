@@ -67,13 +67,7 @@ export default function Home() {
               🎲 Jogar Agora
             </Link>
 
-            <Link
-              href="/ranking"
-              className="rounded-full border-2 border-vermelho px-10 py-5 text-xl font-black uppercase text-vermelho transition hover:bg-vermelho hover:text-white"
-            >
-              🏆 Ranking
-            </Link>
-          </div>
+                      </div>
         </div>
       </section>
 
