@@ -25,41 +25,7 @@ export default function Home() {
             perfeita.
           </p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-4">
-            <div className="rounded-3xl bg-white p-6 text-center card-shadow">
-              <div className="text-4xl font-black text-vermelho">
-                {totalCampanhas}
-              </div>
-              <div className="mt-2 text-sm font-black uppercase text-stone-500">
-                Campanhas
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-6 text-center card-shadow">
-              <div className="text-4xl font-black text-vermelho">
-                {totalJogadores}
-              </div>
-              <div className="mt-2 text-sm font-black uppercase text-stone-500">
-                Jogadores
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-6 text-center card-shadow">
-              <div className="text-4xl font-black text-vermelho">11</div>
-              <div className="mt-2 text-sm font-black uppercase text-stone-500">
-                Titulares
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-6 text-center card-shadow">
-              <div className="text-4xl font-black text-vermelho">14</div>
-              <div className="mt-2 text-sm font-black uppercase text-stone-500">
-                Jogos
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+                    <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
               href="/jogar"
               className="rounded-full bg-vermelho px-10 py-5 text-xl font-black uppercase text-white card-shadow transition hover:scale-[1.03]"

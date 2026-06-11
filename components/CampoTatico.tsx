@@ -6,27 +6,142 @@ type Props = {
   escalacao: Record<string, Jogador | null>;
   posicaoSelecionada: string | null;
   onSelecionarPosicao: (posicao: string) => void;
+  formacao: string;
+  posicoesAtuais: string[];
 };
 
-const coords: Record<string, string> = {
-  GOL: "left-[50%] top-[86%]",
-  LD: "left-[82%] top-[70%]",
-  ZAG: "left-[39%] top-[70%]",
-  ZAG2: "left-[61%] top-[70%]",
-  LE: "left-[18%] top-[70%]",
-  VOL: "left-[50%] top-[55%]",
-  MC: "left-[34%] top-[43%]",
-  MEI: "left-[66%] top-[40%]",
-  PE: "left-[18%] top-[22%]",
-  CA: "left-[50%] top-[17%]",
-  PD: "left-[82%] top-[22%]",
+const coordsPorFormacao: Record<string, Record<string, string>> = {
+  "4-3-3": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[84%] top-[70%]",
+    ZAG: "left-[38%] top-[70%]",
+    ZAG2: "left-[62%] top-[70%]",
+    LE: "left-[16%] top-[70%]",
+    VOL: "left-[50%] top-[57%]",
+    MC: "left-[30%] top-[45%]",
+    MEI: "left-[70%] top-[41%]",
+    PE: "left-[16%] top-[24%]",
+    CA: "left-[50%] top-[18%]",
+    PD: "left-[84%] top-[24%]",
+  },
+
+  "4-4-2": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[84%] top-[70%]",
+    ZAG: "left-[38%] top-[70%]",
+    ZAG2: "left-[62%] top-[70%]",
+    LE: "left-[16%] top-[70%]",
+    VOL: "left-[30%] top-[52%]",
+    MC: "left-[70%] top-[52%]",
+    MEI: "left-[18%] top-[40%]",
+    MEI2: "left-[82%] top-[40%]",
+    CA: "left-[40%] top-[20%]",
+    CA2: "left-[60%] top-[20%]",
+  },
+
+  "4-2-3-1": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[84%] top-[70%]",
+    ZAG: "left-[38%] top-[70%]",
+    ZAG2: "left-[62%] top-[70%]",
+    LE: "left-[16%] top-[70%]",
+    VOL: "left-[38%] top-[55%]",
+    VOL2: "left-[62%] top-[55%]",
+    PE: "left-[18%] top-[38%]",
+    MEI: "left-[50%] top-[38%]",
+    PD: "left-[82%] top-[38%]",
+    CA: "left-[50%] top-[20%]",
+  },
+
+  "4-2-4": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[84%] top-[70%]",
+    ZAG: "left-[38%] top-[70%]",
+    ZAG2: "left-[62%] top-[70%]",
+    LE: "left-[16%] top-[70%]",
+    VOL: "left-[38%] top-[54%]",
+    MC: "left-[62%] top-[54%]",
+    PE: "left-[14%] top-[25%]",
+    CA: "left-[38%] top-[19%]",
+    CA2: "left-[62%] top-[19%]",
+    PD: "left-[86%] top-[25%]",
+  },
+
+  "3-5-2": {
+    GOL: "left-[50%] top-[88%]",
+    ZAG: "left-[28%] top-[70%]",
+    ZAG2: "left-[50%] top-[72%]",
+    ZAG3: "left-[72%] top-[70%]",
+    ALA: "left-[14%] top-[52%]",
+    ALA2: "left-[86%] top-[52%]",
+    VOL: "left-[35%] top-[53%]",
+    MC: "left-[65%] top-[53%]",
+    MEI: "left-[50%] top-[40%]",
+    CA: "left-[40%] top-[22%]",
+    CA2: "left-[60%] top-[22%]",
+  },
+
+  "5-3-2": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[86%] top-[70%]",
+    ZAG: "left-[34%] top-[70%]",
+    ZAG2: "left-[50%] top-[72%]",
+    ZAG3: "left-[66%] top-[70%]",
+    LE: "left-[14%] top-[70%]",
+    VOL: "left-[34%] top-[52%]",
+    MC: "left-[50%] top-[45%]",
+    MEI: "left-[66%] top-[52%]",
+    CA: "left-[40%] top-[23%]",
+    CA2: "left-[60%] top-[23%]",
+  },
+
+  "4-5-1": {
+    GOL: "left-[50%] top-[88%]",
+    LD: "left-[84%] top-[70%]",
+    ZAG: "left-[38%] top-[70%]",
+    ZAG2: "left-[62%] top-[70%]",
+    LE: "left-[16%] top-[70%]",
+    VOL: "left-[24%] top-[55%]",
+    MC: "left-[42%] top-[55%]",
+    MEI: "left-[60%] top-[55%]",
+    MEI2: "left-[78%] top-[55%]",
+    MEI3: "left-[50%] top-[42%]",
+    CA: "left-[50%] top-[20%]",
+  },
+
+  "3-4-3": {
+    GOL: "left-[50%] top-[88%]",
+    ZAG: "left-[28%] top-[70%]",
+    ZAG2: "left-[50%] top-[72%]",
+    ZAG3: "left-[72%] top-[70%]",
+    ALA: "left-[22%] top-[52%]",
+    VOL: "left-[42%] top-[52%]",
+    MC: "left-[58%] top-[52%]",
+    ALA2: "left-[78%] top-[52%]",
+    PE: "left-[18%] top-[24%]",
+    CA: "left-[50%] top-[18%]",
+    PD: "left-[82%] top-[24%]",
+  },
 };
+
+function labelLinha(pos: string) {
+  const base = posicaoBase(pos);
+
+  if (base === "GOL") return "Goleiro";
+  if (["LD", "LE", "ZAG"].includes(base)) return "Defesa";
+  if (["VOL", "MC", "MEI"].includes(base)) return "Meio";
+  return "Ataque";
+}
 
 export default function CampoTatico({
   escalacao,
   posicaoSelecionada,
   onSelecionarPosicao,
+  formacao,
+  posicoesAtuais,
 }: Props) {
+  const coords = coordsPorFormacao[formacao] || coordsPorFormacao["4-3-3"];
+
   return (
     <div className="relative h-[560px] overflow-hidden rounded-[28px] bg-verdeCampo p-4 card-shadow md:h-[620px] md:p-5">
       <div className="absolute inset-4 rounded-[22px] pitch-line md:inset-5" />
@@ -45,15 +160,16 @@ export default function CampoTatico({
         Defesa
       </div>
 
-      {Object.keys(coords).map((pos) => {
+      {posicoesAtuais.map((pos) => {
         const jogador = escalacao[pos];
         const selecionado = posicaoSelecionada === pos;
+        const coord = coords[pos] || "left-[50%] top-[50%]";
 
         return (
           <button
             key={pos}
             onClick={() => onSelecionarPosicao(pos)}
-            className={`absolute ${coords[pos]} -translate-x-1/2 -translate-y-1/2 rounded-2xl border-2 px-2 py-2 text-center transition hover:scale-105 md:px-3 ${
+            className={`absolute ${coord} -translate-x-1/2 -translate-y-1/2 rounded-xl border-2 px-1.5 py-1.5 text-center transition hover:scale-105 ${
               selecionado
                 ? "border-ouro bg-ouro text-black"
                 : jogador
@@ -69,12 +185,12 @@ export default function CampoTatico({
               {jogador ? jogador.overall : "--"}
             </div>
 
-            <div className="mt-2 max-w-[72px] truncate text-xs font-black md:max-w-[95px] md:text-sm">
+            <div className="mt-2 max-w-[90px] truncate text-xs font-black">
               {jogador ? jogador.nome : "Vazio"}
             </div>
 
-            <div className="max-w-[72px] truncate text-[10px] font-bold opacity-80 md:max-w-[95px]">
-              {jogador ? jogador.clube : pos === "GOL" ? "Goleiro" : ["LD", "LE", "ZAG", "ZAG2"].includes(pos) ? "Defesa" : ["VOL", "MC", "MEI"].includes(pos) ? "Meio" : "Ataque"}
+            <div className="max-w-[90px] truncate text-[10px] font-bold opacity-80">
+              {jogador ? jogador.clube : labelLinha(pos)}
             </div>
           </button>
         );

@@ -38,7 +38,7 @@ const fases = [
   "Final",
 ];
 
-const adversarios = [
+const adversariosBase = [
   "Paysandu",
   "Bahia",
   "Athletico-PR",
@@ -46,6 +46,24 @@ const adversarios = [
   "São Paulo",
   "Palmeiras",
   "Flamengo",
+  "Corinthians",
+  "Grêmio",
+  "Cruzeiro",
+  "Santos",
+  "Fluminense",
+  "Botafogo",
+  "Sport",
+  "Goiás",
+  "Coritiba",
+  "Vitória",
+  "Ceará",
+  "Fortaleza",
+  "Juventude",
+  "Ponte Preta",
+  "Náutico",
+  "Santa Cruz",
+  "Remo",
+  "Criciúma",
 ];
 
 function sortear(min: number, max: number) {
@@ -163,6 +181,10 @@ function gerarSimulacao(jogadores: Jogador[]): Simulacao {
   );
 
   const jogos: Jogo[] = [];
+
+  const adversarios = [...adversariosBase]
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 7);
 
   fases.forEach((fase, faseIndex) => {
     const adversario = adversarios[faseIndex];

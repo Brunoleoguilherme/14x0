@@ -4,7 +4,8 @@ import Header from "@/components/Header";
 import CampoTatico from "@/components/CampoTatico";
 import ListaJogadores from "@/components/ListaJogadores";
 import ResultadoSimulacao from "@/components/ResultadoSimulacao";
-import { Jogador, posicaoBase, posicoes } from "@/lib/data";
+import ConfiguracaoJogo from "@/components/ConfiguracaoJogo";
+import { Jogador, posicaoBase, posicoesPorFormacao } from "@/lib/data";
 import { useMemo, useRef, useState } from "react";
 
 type ApiCampanha = {
@@ -28,20 +29,30 @@ type ApiJogador = {
   overall: number;
 };
 
+function esperar(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function JogarPage() {
+  const [formacao, setFormacao] = useState("4-3-3");
+  const [estilo, setEstilo] = useState("Equilibrado");
+  const [modo, setModo] = useState("Clássico");
+
+  const posicoesAtuais = useMemo(() => {
+    return posicoesPorFormacao[formacao] || posicoesPorFormacao["4-3-3"];
+  }, [formacao]);
+
   const initial = useMemo(
     () =>
-      Object.fromEntries(posicoes.map((p) => [p, null])) as Record<
+      Object.fromEntries(posicoesAtuais.map((p) => [p, null])) as Record<
         string,
         Jogador | null
       >,
-    []
+    [posicoesAtuais]
   );
 
   const [escalacao, setEscalacao] =
     useState<Record<string, Jogador | null>>(initial);
-
-    const rolagemId = useRef(0);
 
   const [posicaoSelecionada, setPosicaoSelecionada] = useState<string | null>(
     "GOL"
@@ -54,14 +65,17 @@ export default function JogarPage() {
   const [historico, setHistorico] = useState<ApiCampanha[]>([]);
   const [campanhasUsadas, setCampanhasUsadas] = useState<number[]>([]);
 
-  const preenchidos = Object.values(escalacao).filter(Boolean).length;
+  const rolagemId = useRef(0);
+
+  const preenchidos = posicoesAtuais.filter((p) => escalacao[p]).length;
   const completo = preenchidos === 11;
   const progresso = Math.round((preenchidos / 11) * 100);
 
   const overallMedio =
     preenchidos > 0
       ? Math.round(
-          Object.values(escalacao)
+          posicoesAtuais
+            .map((p) => escalacao[p])
             .filter(Boolean)
             .reduce((soma, jogador) => soma + (jogador?.overall || 0), 0) /
             preenchidos
@@ -82,6 +96,20 @@ export default function JogarPage() {
     };
   }
 
+  async function buscarCampanhaAleatoria(usados: number[]) {
+    const params = usados.length > 0 ? `?usados=${usados.join(",")}` : "";
+
+    const res = await fetch(`/api/roleta${params}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error("Erro ao sortear campanha");
+    }
+
+    return (await res.json()) as ApiCampanha;
+  }
+
   async function buscarJogadores(campanhaId: number) {
     const res = await fetch(`/api/campanha/${campanhaId}`, {
       cache: "no-store",
@@ -91,79 +119,57 @@ export default function JogarPage() {
     setJogadoresDoElenco(data.map(converterJogador));
   }
 
-  async function buscarCampanhaAleatoria(usados: number[]) {
-    const params = usados.length > 0 ? `?usados=${usados.join(",")}` : "";
-    const res = await fetch(`/api/roleta${params}`, { cache: "no-store" });
+  async function rolarCampanha() {
+    if (rolando || completo || podeEscolher) return;
 
-    if (!res.ok) {
-      throw new Error("Erro ao sortear campanha");
-    }
+    const idAtual = rolagemId.current + 1;
+    rolagemId.current = idAtual;
 
-    return (await res.json()) as ApiCampanha;
-  }
+    setRolando(true);
+    setPodeEscolher(false);
+    setJogadoresDoElenco([]);
 
-  function esperar(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+    const usadosAgora = [...campanhasUsadas];
 
-async function rolarCampanha() {
-  if (rolando || completo || podeEscolher) return;
+    try {
+      let final: ApiCampanha | null = null;
 
-  const idAtual = rolagemId.current + 1;
-  rolagemId.current = idAtual;
+      for (let i = 0; i < 14; i++) {
+        if (rolagemId.current !== idAtual) return;
 
-  setRolando(true);
-  setPodeEscolher(false);
-  setJogadoresDoElenco([]);
+        const campanha = await buscarCampanhaAleatoria(usadosAgora);
 
-  const usadosAgora = [...campanhasUsadas];
+        if (rolagemId.current !== idAtual) return;
 
-  try {
-    let final: ApiCampanha | null = null;
+        setCampanhaAtual(campanha);
+        final = campanha;
 
-    for (let i = 0; i < 14; i++) {
-      if (rolagemId.current !== idAtual) return;
+        await esperar(120);
+      }
 
-      const campanha = await buscarCampanhaAleatoria(usadosAgora);
+      if (!final || rolagemId.current !== idAtual) return;
 
-      if (rolagemId.current !== idAtual) return;
+      setCampanhaAtual(final);
 
-      setCampanhaAtual(campanha);
-      final = campanha;
+      await buscarJogadores(final.campanha_id);
 
-      await esperar(120);
-    }
+      setHistorico((prev) => [final!, ...prev].slice(0, 8));
 
-    if (!final || rolagemId.current !== idAtual) return;
+      setCampanhasUsadas((prev) =>
+        prev.includes(final!.campanha_id)
+          ? prev
+          : [...prev, final!.campanha_id]
+      );
 
-    const jogadoresRes = await fetch(`/api/campanha/${final.campanha_id}`, {
-      cache: "no-store",
-    });
-
-    const jogadoresData: ApiJogador[] = await jogadoresRes.json();
-
-    if (rolagemId.current !== idAtual) return;
-
-    setCampanhaAtual(final);
-    setJogadoresDoElenco(jogadoresData.map(converterJogador));
-
-    setHistorico((prev) => [final!, ...prev].slice(0, 8));
-
-    setCampanhasUsadas((prev) =>
-      prev.includes(final!.campanha_id)
-        ? prev
-        : [...prev, final!.campanha_id]
-    );
-
-    setPodeEscolher(true);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    if (rolagemId.current === idAtual) {
-      setRolando(false);
+      setPodeEscolher(true);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (rolagemId.current === idAtual) {
+        setRolando(false);
+      }
     }
   }
-}
 
   function encontrarSlotLivre(jogador: Jogador) {
     if (
@@ -174,7 +180,7 @@ async function rolarCampanha() {
       return posicaoSelecionada;
     }
 
-    return posicoes.find((slot) => {
+    return posicoesAtuais.find((slot) => {
       const base = posicaoBase(slot);
       return escalacao[slot] === null && jogador.posicoes.includes(base);
     });
@@ -193,7 +199,7 @@ async function rolarCampanha() {
 
     setEscalacao(novaEscalacao);
 
-    const proximaVazia = posicoes.find((p) => novaEscalacao[p] === null);
+    const proximaVazia = posicoesAtuais.find((p) => novaEscalacao[p] === null);
     setPosicaoSelecionada(proximaVazia || null);
 
     setPodeEscolher(false);
@@ -202,6 +208,23 @@ async function rolarCampanha() {
 
   function limpar() {
     setEscalacao(initial);
+    setPosicaoSelecionada("GOL");
+    setCampanhaAtual(null);
+    setJogadoresDoElenco([]);
+    setPodeEscolher(false);
+    setHistorico([]);
+    setCampanhasUsadas([]);
+  }
+
+  function trocarFormacao(novaFormacao: string) {
+    setFormacao(novaFormacao);
+    setEscalacao(
+      Object.fromEntries(
+        (posicoesPorFormacao[novaFormacao] || posicoesPorFormacao["4-3-3"]).map(
+          (p) => [p, null]
+        )
+      ) as Record<string, Jogador | null>
+    );
     setPosicaoSelecionada("GOL");
     setCampanhaAtual(null);
     setJogadoresDoElenco([]);
@@ -268,6 +291,15 @@ async function rolarCampanha() {
           </div>
         </div>
 
+        <ConfiguracaoJogo
+          formacao={formacao}
+          estilo={estilo}
+          modo={modo}
+          onFormacao={trocarFormacao}
+          onEstilo={setEstilo}
+          onModo={setModo}
+        />
+
         <div className="mb-6 rounded-[28px] bg-vermelho p-6 text-white card-shadow">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -287,7 +319,9 @@ async function rolarCampanha() {
 
               <div className="font-bold opacity-90">
                 {campanhaAtual
-                  ? `${campanhaAtual.dificuldade} • Força ${campanhaAtual.forca}`
+                  ? modo === "Lenda"
+                    ? "Modo Lenda"
+                    : `${campanhaAtual.dificuldade} • Força ${campanhaAtual.forca}`
                   : "Cada rodada libera um elenco histórico."}
               </div>
             </div>
@@ -327,6 +361,8 @@ async function rolarCampanha() {
               jogadores={jogadoresDoElenco}
               escalacao={escalacao}
               onEscolher={escolher}
+              modo={modo}
+              posicoesAtuais={posicoesAtuais}
             />
           ) : (
             <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white p-6 text-center card-shadow">
@@ -347,6 +383,8 @@ async function rolarCampanha() {
             escalacao={escalacao}
             posicaoSelecionada={posicaoSelecionada}
             onSelecionarPosicao={setPosicaoSelecionada}
+            formacao={formacao}
+            posicoesAtuais={posicoesAtuais}
           />
         </div>
 
