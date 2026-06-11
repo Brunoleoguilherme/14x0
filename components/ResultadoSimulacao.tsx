@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Jogador } from "@/lib/data";
 
 type Props = { escalacao: Record<string, Jogador | null> };
@@ -244,6 +244,17 @@ export default function ResultadoSimulacao({ escalacao }: Props) {
     return gerarSimulacao(jogadores);
   });
 
+  const simulacaoRef = useRef<HTMLDivElement | null>(null);
+
+function rolarParaSimulacao() {
+  window.setTimeout(() => {
+    simulacaoRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 200);
+}
+
   const [jogosRevelados, setJogosRevelados] = useState(0);
   const [eventosRevelados, setEventosRevelados] = useState(0);
   const [simulandoEventos, setSimulandoEventos] = useState(false);
@@ -339,6 +350,7 @@ export default function ResultadoSimulacao({ escalacao }: Props) {
 
     const novoTotal = jogosRevelados + 1;
     setJogosRevelados(novoTotal);
+    rolarParaSimulacao();
     setEventosRevelados(0);
     setClassificadoPenaltis(null);
     verificarClassificacao(novoTotal);
@@ -348,6 +360,7 @@ export default function ResultadoSimulacao({ escalacao }: Props) {
     if (!jogoAtual || simulandoEventos || eliminado || fasePenalti !== null) return;
 
     setSimulandoEventos(true);
+    rolarParaSimulacao();
     setEventosRevelados(0);
     setClassificadoPenaltis(null);
 
@@ -383,7 +396,10 @@ export default function ResultadoSimulacao({ escalacao }: Props) {
   const acabou = jogosRevelados >= 14 && !eliminado;
 
   return (
-    <section className="mt-8 rounded-[28px] bg-verdeEscuro p-6 text-white card-shadow">
+    <section
+  ref={simulacaoRef}
+  className="mt-8 rounded-[28px] bg-verdeEscuro p-6 text-white card-shadow scroll-mt-6"
+>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black">Simulação da campanha</h2>
