@@ -134,7 +134,7 @@ export default function JogarPage() {
     try {
       let final: ApiCampanha | null = null;
 
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 5; i++) {
         if (rolagemId.current !== idAtual) return;
 
         const campanha = await buscarCampanhaAleatoria(usadosAgora);
@@ -144,7 +144,7 @@ export default function JogarPage() {
         setCampanhaAtual(campanha);
         final = campanha;
 
-        await esperar(120);
+        await esperar(70);
       }
 
       if (!final || rolagemId.current !== idAtual) return;
