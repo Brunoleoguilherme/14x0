@@ -68,7 +68,7 @@ export default function JogarPage() {
   const [podeEscolher, setPodeEscolher] = useState(false);
   const [historico, setHistorico] = useState<ApiCampanha[]>([]);
   const [campanhasUsadas, setCampanhasUsadas] = useState<number[]>([]);
-
+  const [jogadorPendente, setJogadorPendente] = useState<Jogador | null>(null);
   const rolagemId = useRef(0);
 
   const preenchidos = posicoesAtuais.filter((p) => escalacao[p]).length;
@@ -190,24 +190,18 @@ export default function JogarPage() {
 }
 
   function escolher(jogador: Jogador) {
-    if (!podeEscolher || rolando) return;
+  if (!podeEscolher || rolando) return;
 
-    const slot = encontrarSlotLivre(jogador);
-    if (!slot) return;
+  setJogadorPendente(jogador);
 
-    const novaEscalacao = {
-      ...escalacao,
-      [slot]: jogador,
-    };
+  if (jogador.posicoes.includes("GOL")) {
+    const slotGol = posicoesAtuais.find((slot) => slot === "GOL" && escalacao[slot] === null);
 
-    setEscalacao(novaEscalacao);
-
-    const proximaVazia = posicoesAtuais.find((p) => novaEscalacao[p] === null);
-    setPosicaoSelecionada(proximaVazia || null);
-
-    setPodeEscolher(false);
-    setJogadoresDoElenco([]);
+    if (slotGol) {
+      confirmarSlot(slotGol, jogador);
+    }
   }
+}
 
   function limpar() {
     setEscalacao(initial);
@@ -218,6 +212,28 @@ export default function JogarPage() {
     setHistorico([]);
     setCampanhasUsadas([]);
   }
+
+  function confirmarSlot(slot: string, jogador = jogadorPendente) {
+  if (!jogador) return;
+
+  if (escalacao[slot] !== null) return;
+
+  if (!jogadorEncaixaNoSlot(jogador.posicoes, slot)) return;
+
+  const novaEscalacao = {
+    ...escalacao,
+    [slot]: jogador,
+  };
+
+  setEscalacao(novaEscalacao);
+
+  const proximaVazia = posicoesAtuais.find((p) => novaEscalacao[p] === null);
+
+  setPosicaoSelecionada(proximaVazia || null);
+  setJogadorPendente(null);
+  setPodeEscolher(false);
+  setJogadoresDoElenco([]);
+}
 
   function trocarFormacao(novaFormacao: string) {
     setFormacao(novaFormacao);
@@ -383,12 +399,14 @@ export default function JogarPage() {
           )}
 
           <CampoTatico
-            escalacao={escalacao}
-            posicaoSelecionada={posicaoSelecionada}
-            onSelecionarPosicao={setPosicaoSelecionada}
-            formacao={formacao}
-            posicoesAtuais={posicoesAtuais}
-          />
+  escalacao={escalacao}
+  posicaoSelecionada={posicaoSelecionada}
+  onSelecionarPosicao={setPosicaoSelecionada}
+  formacao={formacao}
+  posicoesAtuais={posicoesAtuais}
+  jogadorPendente={jogadorPendente}
+  onConfirmarSlot={confirmarSlot}
+/>
         </div>
 
         {completo ? (
