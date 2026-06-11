@@ -5,7 +5,11 @@ import CampoTatico from "@/components/CampoTatico";
 import ListaJogadores from "@/components/ListaJogadores";
 import ResultadoSimulacao from "@/components/ResultadoSimulacao";
 import ConfiguracaoJogo from "@/components/ConfiguracaoJogo";
-import { Jogador, posicaoBase, posicoesPorFormacao } from "@/lib/data";
+import {
+  Jogador,
+  jogadorEncaixaNoSlot,
+  posicoesPorFormacao,
+} from "@/lib/data";
 import { useMemo, useRef, useState } from "react";
 
 type ApiCampanha = {
@@ -172,19 +176,18 @@ export default function JogarPage() {
   }
 
   function encontrarSlotLivre(jogador: Jogador) {
-    if (
-      posicaoSelecionada &&
-      escalacao[posicaoSelecionada] === null &&
-      jogador.posicoes.includes(posicaoBase(posicaoSelecionada))
-    ) {
-      return posicaoSelecionada;
-    }
-
-    return posicoesAtuais.find((slot) => {
-      const base = posicaoBase(slot);
-      return escalacao[slot] === null && jogador.posicoes.includes(base);
-    });
+  if (
+    posicaoSelecionada &&
+    escalacao[posicaoSelecionada] === null &&
+    jogadorEncaixaNoSlot(jogador.posicoes, posicaoSelecionada)
+  ) {
+    return posicaoSelecionada;
   }
+
+  return posicoesAtuais.find((slot) => {
+    return escalacao[slot] === null && jogadorEncaixaNoSlot(jogador.posicoes, slot);
+  });
+}
 
   function escolher(jogador: Jogador) {
     if (!podeEscolher || rolando) return;

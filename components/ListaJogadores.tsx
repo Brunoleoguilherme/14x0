@@ -1,6 +1,6 @@
 "use client";
 
-import { Jogador, posicaoBase } from "@/lib/data";
+import { Jogador, jogadorEncaixaNoSlot, posicaoBase } from "@/lib/data";
 
 type Props = {
   jogadores: Jogador[];
@@ -35,20 +35,18 @@ export default function ListaJogadores({
   const modoLenda = modo === "Lenda";
 
   function encaixa(jogador: Jogador) {
-    return posicoesAtuais.some((slot) => {
-      const base = posicaoBase(slot);
-      return escalacao[slot] === null && jogador.posicoes.includes(base);
-    });
-  }
+  return posicoesAtuais.some((slot) => {
+    return escalacao[slot] === null && jogadorEncaixaNoSlot(jogador.posicoes, slot);
+  });
+}
 
   function encaixesDisponiveis(jogador: Jogador) {
-    return posicoesAtuais
-      .filter((slot) => {
-        const base = posicaoBase(slot);
-        return escalacao[slot] === null && jogador.posicoes.includes(base);
-      })
-      .map((slot) => posicaoBase(slot));
-  }
+  return posicoesAtuais
+    .filter((slot) => {
+      return escalacao[slot] === null && jogadorEncaixaNoSlot(jogador.posicoes, slot);
+    })
+    .map((slot) => posicaoBase(slot));
+}
 
   const ordenados = [...jogadores].sort((a, b) => {
     const pa = ordemPosicao.indexOf(a.posicoes[0]);

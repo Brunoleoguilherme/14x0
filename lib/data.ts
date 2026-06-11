@@ -32,3 +32,25 @@ export const posicaoBase = (posicao: string) => {
   if (posicao === "ALA2") return "LD";
   return posicao;
 };
+
+export const setorDaPosicao = (posicao: string) => {
+  const base = posicaoBase(posicao);
+
+  if (base === "GOL") return "GOL";
+  if (["LD", "LE", "ZAG"].includes(base)) return "DEFESA";
+  if (["VOL", "MC", "MEI"].includes(base)) return "MEIO";
+  if (["PE", "PD", "CA"].includes(base)) return "ATAQUE";
+
+  return base;
+};
+
+export const jogadorEncaixaNoSlot = (
+  jogadorPosicoes: string[],
+  slot: string
+) => {
+  const setorSlot = setorDaPosicao(slot);
+
+  return jogadorPosicoes.some((posicaoJogador) => {
+    return setorDaPosicao(posicaoJogador) === setorSlot;
+  });
+};

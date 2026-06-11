@@ -190,7 +190,7 @@ function gerarSimulacao(jogadores: Jogador[]): Simulacao {
     const adversario = adversarios[faseIndex];
 
     for (let perna = 0; perna < 2; perna++) {
-      const dificuldade = 76 + faseIndex * 3;
+      const dificuldade = 72 + faseIndex * 3;
 
       let golsPro = Math.max(
         0,
@@ -202,8 +202,8 @@ function gerarSimulacao(jogadores: Jogador[]): Simulacao {
         Math.floor((dificuldade - defesa + 12) / 11) + sortear(0, 1)
       );
 
-      if (overall >= 92 && sortear(1, 100) <= 18) golsPro++;
-      if (overall < 86 && sortear(1, 100) <= 24) golsContra++;
+      if (overall >= 88 && sortear(1, 100) <= 18) golsPro++;
+      if (overall < 84 && sortear(1, 100) <= 24) golsContra++;
 
       const jogo: Jogo = {
         fase,
